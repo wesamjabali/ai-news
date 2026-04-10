@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <div class="safe-area-header" />
     <NuxtRouteAnnouncer />
     <NuxtPage />
   </div>
@@ -71,7 +72,6 @@ body {
   max-width: 720px;
   margin: 0 auto;
   padding: 1.25rem 1rem 3rem;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);
   padding-left: calc(env(safe-area-inset-left, 0px) + 1rem);
   padding-right: calc(env(safe-area-inset-right, 0px) + 1rem);
@@ -82,11 +82,20 @@ body {
 @media (min-width: 640px) {
   #app {
     padding: 2rem 1.5rem 4rem;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
     padding-left: calc(env(safe-area-inset-left, 0px) + 1.5rem);
     padding-right: calc(env(safe-area-inset-right, 0px) + 1.5rem);
   }
+}
+
+.safe-area-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  height: env(safe-area-inset-top, 0px);
+  background-color: var(--bg);
 }
 
 a {

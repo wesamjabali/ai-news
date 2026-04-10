@@ -4,7 +4,7 @@ import { generate } from "./news.get";
 
 export default defineEventHandler(async (event) => {
   const {
-    public: { maxUpdates },
+    public: { maxUpdates, updateWindowHours },
   } = useRuntimeConfig(event);
 
   if (generating) {
@@ -12,11 +12,12 @@ export default defineEventHandler(async (event) => {
     return { error: "A briefing is already being generated." };
   }
 
-  const recentCount = await getRecentSummaryCount();
+  const windowMinutes = updateWindowHours * 60;
+  const recentCount = await getRecentSummaryCount(windowMinutes);
   if (recentCount >= maxUpdates) {
     setResponseStatus(event, 429);
     return {
-      error: `Rate limit reached. Maximum ${maxUpdates} briefings per hour.`,
+      error: `Rate limit reached. Maximum ${maxUpdates} briefings per ${updateWindowHours} hour${updateWindowHours === 1 ? "" : "s"}.`,
       recentCount,
     };
   }

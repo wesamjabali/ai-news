@@ -115,14 +115,18 @@ const { data, status, error, refresh } = await useFetch<{
   recentCount?: number;
 }>("/api/news");
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const {
+  public: { maxUpdates, updateWindowHours },
+} = useRuntimeConfig();
+
+const windowMs = updateWindowHours * 60 * 60 * 1000;
 
 function isStale(createdAt?: string): boolean {
   if (!createdAt) return false;
   const created = new Date(
     createdAt.includes("T") ? createdAt : createdAt + "Z",
   );
-  return Date.now() - created.getTime() >= ONE_HOUR_MS;
+  return Date.now() - created.getTime() >= windowMs;
 }
 
 // If the server returned stale content and is already generating,
@@ -134,10 +138,6 @@ if (data.value?.generating && isStale(data.value.createdAt)) {
 const isRequesting = ref(false);
 const bannerState = ref<"hidden" | "generating" | "ready">("hidden");
 const didStream = ref(false);
-
-const {
-  public: { maxUpdates },
-} = useRuntimeConfig();
 
 const canGenerate = computed(() => {
   if (streamContent.value) return false;
