@@ -16,7 +16,6 @@
   --code-bg: #f5f5f4;
   --blockquote-border: #d97706;
   --accent: #92400e;
-  --header-height: 4rem;
 }
 
 @media (prefers-color-scheme: dark) {
