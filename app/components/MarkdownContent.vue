@@ -130,8 +130,28 @@ async function renderMermaid() {
   }
 }
 
-onMounted(renderMermaid);
-watch(renderedHtml, renderMermaid, { flush: "post" });
+function hidesBrokenImages() {
+  if (!containerRef.value) return;
+  const images = containerRef.value.querySelectorAll("img");
+  for (const img of images) {
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+  }
+}
+
+onMounted(() => {
+  renderMermaid();
+  hidesBrokenImages();
+});
+watch(
+  renderedHtml,
+  () => {
+    renderMermaid();
+    nextTick(hidesBrokenImages);
+  },
+  { flush: "post" },
+);
 
 function handleAnchorClick(e: MouseEvent) {
   const link = (e.target as HTMLElement).closest("a.anchor-link");
@@ -140,15 +160,32 @@ function handleAnchorClick(e: MouseEvent) {
   const href = link.getAttribute("href");
   if (!href?.startsWith("#")) return;
   const rawSlug = href.slice(1);
-  const normalized = rawSlug
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+  let decoded = rawSlug;
+  try {
+    decoded = decodeURIComponent(rawSlug);
+  } catch {}
+  const normalized = slugify(decoded);
   const el =
-    document.getElementById(normalized) || document.getElementById(rawSlug);
+    document.getElementById(normalized) ||
+    document.getElementById(rawSlug) ||
+    document.getElementById(decoded) ||
+    findHeadingBySlug(normalized);
   el?.scrollIntoView({ behavior: "instant" });
+}
+
+function findHeadingBySlug(targetSlug: string): HTMLElement | null {
+  if (!containerRef.value) return null;
+  const headings = containerRef.value.querySelectorAll(
+    "h1, h2, h3, h4, h5, h6",
+  );
+  for (const heading of headings) {
+    const headingSlug = slugify(heading.textContent || "");
+    if (headingSlug === targetSlug) return heading as HTMLElement;
+    if (headingSlug.includes(targetSlug) || targetSlug.includes(headingSlug)) {
+      return heading as HTMLElement;
+    }
+  }
+  return null;
 }
 </script>
 

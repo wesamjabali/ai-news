@@ -115,6 +115,22 @@ const { data, status, error, refresh } = await useFetch<{
   recentCount?: number;
 }>("/api/news");
 
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function isStale(createdAt?: string): boolean {
+  if (!createdAt) return false;
+  const created = new Date(
+    createdAt.includes("T") ? createdAt : createdAt + "Z",
+  );
+  return Date.now() - created.getTime() >= ONE_HOUR_MS;
+}
+
+// If the server returned stale content and is already generating,
+// clear the old content so the loading screen shows (same as "Generate New")
+if (data.value?.generating && isStale(data.value.createdAt)) {
+  data.value = { generating: true, recentCount: data.value.recentCount };
+}
+
 const isRequesting = ref(false);
 const bannerState = ref<"hidden" | "generating" | "ready">("hidden");
 const didStream = ref(false);
@@ -267,6 +283,11 @@ async function handleVisibilityChange() {
   const prev = lastSeenCreatedAt.value;
   await refresh();
   refreshHistory();
+
+  // If the server is generating and content is stale, show loading screen
+  if (data.value?.generating && isStale(data.value.createdAt)) {
+    data.value = { generating: true, recentCount: data.value.recentCount };
+  }
 
   if (data.value?.generating && !streamContent.value) {
     bannerState.value = "generating";
