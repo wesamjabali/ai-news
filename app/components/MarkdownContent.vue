@@ -222,6 +222,7 @@ function findHeadingBySlug(targetSlug: string): HTMLElement | null {
   margin-bottom: 1.5rem;
   line-height: 1.3;
   color: var(--text);
+  scroll-margin-top: var(--header-height);
 }
 
 .markdown-body :deep(h2) {
@@ -231,6 +232,7 @@ function findHeadingBySlug(targetSlug: string): HTMLElement | null {
   margin-bottom: 0.75rem;
   line-height: 1.3;
   color: var(--text);
+  scroll-margin-top: var(--header-height);
 }
 
 @media (min-width: 640px) {
@@ -248,6 +250,7 @@ function findHeadingBySlug(targetSlug: string): HTMLElement | null {
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
   color: var(--text);
+  scroll-margin-top: var(--header-height);
 }
 
 .markdown-body :deep(p) {

@@ -386,9 +386,14 @@ useHead({
 
 <style scoped>
 .site-header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background-color: var(--bg);
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
+  transition: background-color 0.3s ease;
 }
 
 .site-title {
