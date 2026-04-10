@@ -32,8 +32,13 @@ const slugify = (str: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
+const headingSlugCounts = new Map<string, number>();
+
 renderer.heading = ({ text, depth }) => {
-  const slug = slugify(text);
+  const baseSlug = slugify(text);
+  const count = headingSlugCounts.get(baseSlug) || 0;
+  headingSlugCounts.set(baseSlug, count + 1);
+  const slug = count === 0 ? baseSlug : `${baseSlug}-${count}`;
   return `<h${depth} id="${slug}">${text}</h${depth}>`;
 };
 
@@ -71,6 +76,7 @@ if (import.meta.client) {
 }
 
 const renderedHtml = computed(() => {
+  headingSlugCounts.clear();
   const raw = marked.parse(props.content, { async: false, renderer }) as string;
   return sanitize
     ? sanitize(raw, {
@@ -181,14 +187,31 @@ function findHeadingBySlug(targetSlug: string): HTMLElement | null {
   const headings = containerRef.value.querySelectorAll(
     "h1, h2, h3, h4, h5, h6",
   );
+
+  // First pass: exact match
   for (const heading of headings) {
     const headingSlug = slugify(heading.textContent || "");
     if (headingSlug === targetSlug) return heading as HTMLElement;
+  }
+
+  // Second pass: fuzzy match — prefer the closest match by length ratio
+  let bestMatch: HTMLElement | null = null;
+  let bestScore = 0;
+
+  for (const heading of headings) {
+    const headingSlug = slugify(heading.textContent || "");
     if (headingSlug.includes(targetSlug) || targetSlug.includes(headingSlug)) {
-      return heading as HTMLElement;
+      const shorter = Math.min(headingSlug.length, targetSlug.length);
+      const longer = Math.max(headingSlug.length, targetSlug.length);
+      const score = shorter / longer;
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = heading as HTMLElement;
+      }
     }
   }
-  return null;
+
+  return bestMatch;
 }
 </script>
 
