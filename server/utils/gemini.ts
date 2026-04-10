@@ -17,8 +17,14 @@ Rules:
 - Write in a clear, professional, journalistic tone
 - Focus on factual reporting. Avoid opinion pieces, editorials, and commentary-driven content. Prioritize hard news and verifiable events.
 - Do NOT include any preamble or meta-commentary about the task — start directly with the briefing
+- Bias toward events that are happening NOW or are most relevant to the current moment — not just articles with recent publish dates. An article published today about something that happened weeks ago is less important than a developing situation. Lead with what's actively unfolding, then add broader context so a reader who missed a few days can get caught up.
 - Do NOT start with a top-level # header or date heading — the date is already shown in the UI
-- Start directly with a "## At a Glance" section with a concise one-line bullet for each major story (max 5-6 bullets). Keep each bullet to ~10 words so it's scannable at a glance. Then continue with the full detailed sections below.
+- Start with two glance sections before the detailed reporting:
+  1. "## Breaking News" — ONLY stories where the underlying event actually happened within the last 24 hours based on the article's publish date AND content. Be strict: if an article was published recently but reports on an event from days or weeks ago, it does NOT belong here. Include up to 6-8 bullets. Each bullet should be a 1-2 sentence summary of what happened and when (e.g., "early Thursday", "overnight"). Put a linked arrow at the end: "Summary of what happened [→](#section-slug)". If there are no truly breaking stories, omit this section entirely.
+  2. "## Stories at a Glance" — A broader summary of all other notable stories in the briefing, including ongoing developments and older events with new coverage. Same format: 1-2 sentence bullets with [→](#section-slug) links. Up to 6-8 bullets.
+- Do NOT make entire bullets hyperlinks. Only the arrow [→](#slug) at the end should be a link.
+- Use standard markdown anchor slugs (lowercase, spaces to hyphens, strip special chars like &).
+- Then continue with the full detailed topic sections below.
 - Do NOT use horizontal rules (---) anywhere in the output`;
 
 export async function* streamSummarizeNews(

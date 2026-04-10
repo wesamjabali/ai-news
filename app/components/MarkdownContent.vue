@@ -1,5 +1,9 @@
 <template>
-  <div class="markdown-body" v-html="renderedHtml"></div>
+  <div
+    class="markdown-body"
+    v-html="renderedHtml"
+    @click="handleAnchorClick"
+  ></div>
 </template>
 
 <script setup lang="ts">
@@ -10,7 +14,20 @@ renderer.link = ({ href, text }) => {
   if (href?.startsWith("http")) {
     return `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
   }
-  return `<a href="${href}">${text}</a>`;
+  return `<a href="${href}" class="anchor-link">${text}</a>`;
+};
+const slugify = (str: string) =>
+  str
+    .toLowerCase()
+    .replace(/<[^>]*>/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+renderer.heading = ({ text, depth }) => {
+  const slug = slugify(text);
+  return `<h${depth} id="${slug}">${text}</h${depth}>`;
 };
 
 const props = defineProps<{
@@ -28,8 +45,26 @@ if (import.meta.client) {
 
 const renderedHtml = computed(() => {
   const raw = marked.parse(props.content, { async: false, renderer }) as string;
-  return sanitize ? sanitize(raw, { ADD_ATTR: ["target", "rel"] }) : raw;
+  return sanitize ? sanitize(raw, { ADD_ATTR: ["target", "rel", "id"] }) : raw;
 });
+
+function handleAnchorClick(e: MouseEvent) {
+  const link = (e.target as HTMLElement).closest("a.anchor-link");
+  if (!link) return;
+  e.preventDefault();
+  const href = link.getAttribute("href");
+  if (!href?.startsWith("#")) return;
+  const rawSlug = href.slice(1);
+  const normalized = rawSlug
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  const el =
+    document.getElementById(normalized) || document.getElementById(rawSlug);
+  el?.scrollIntoView({ behavior: "smooth" });
+}
 </script>
 
 <style scoped>
