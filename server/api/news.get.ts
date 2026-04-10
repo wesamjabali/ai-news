@@ -3,7 +3,7 @@ import {
   getRecentSummaryCount,
   insertSummary,
 } from "../database";
-import { streamSummarizeNews } from "../utils/gemini";
+import { fetchBreakingFromSearch, streamSummarizeNews } from "../utils/gemini";
 import {
   appendInProgressContent,
   generating,
@@ -32,15 +32,21 @@ export async function generate() {
   resetInProgressContent();
   newsEmitter.emit("generation-start");
   try {
-    const articles = await fetchAllNews();
+    const [articles, breakingFromSearch] = await Promise.all([
+      fetchAllNews(),
+      fetchBreakingFromSearch(),
+    ]);
 
-    if (articles.length === 0) {
+    if (articles.length === 0 && breakingFromSearch.length === 0) {
       newsEmitter.emit("error", "Could not fetch news from any source.");
       return;
     }
 
+    // Prepend search-sourced breaking news so they appear first in the prompt
+    const allArticles = [...breakingFromSearch, ...articles];
+
     let fullContent = "";
-    for await (const chunk of streamSummarizeNews(articles)) {
+    for await (const chunk of streamSummarizeNews(allArticles)) {
       fullContent += chunk;
       appendInProgressContent(chunk);
       newsEmitter.emit("chunk", chunk);

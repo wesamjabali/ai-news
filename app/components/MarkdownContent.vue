@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="containerRef"
     class="markdown-body"
     v-html="renderedHtml"
     @click="handleAnchorClick"
@@ -15,6 +16,12 @@ renderer.link = ({ href, text }) => {
     return `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
   }
   return `<a href="${href}" class="anchor-link">${text}</a>`;
+};
+renderer.code = ({ text, lang }) => {
+  if (lang === "mermaid") {
+    return `<pre class="mermaid">${text}</pre>`;
+  }
+  return `<pre><code class="language-${lang || ""}">${text}</code></pre>`;
 };
 const slugify = (str: string) =>
   str
@@ -34,19 +41,94 @@ const props = defineProps<{
   content: string;
 }>();
 
+const containerRef = ref<HTMLElement | null>(null);
+
 let sanitize:
   | ((html: string, config?: Record<string, unknown>) => string)
   | null = null;
 
+let mermaid: any = null;
+
 if (import.meta.client) {
   const DOMPurify = (await import("dompurify")).default;
   sanitize = (html, config) => DOMPurify.sanitize(html, config);
+  mermaid = (await import("mermaid")).default;
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "dark",
+    themeVariables: {
+      darkMode: true,
+      background: "transparent",
+      primaryColor: "#1a3a4a",
+      primaryTextColor: "#e0e0e0",
+      primaryBorderColor: "#4a9aba",
+      lineColor: "#4a9aba",
+      secondaryColor: "#2a2a3a",
+      tertiaryColor: "#1a2a2a",
+    },
+    flowchart: { htmlLabels: true, curve: "basis" },
+  });
 }
 
 const renderedHtml = computed(() => {
   const raw = marked.parse(props.content, { async: false, renderer }) as string;
-  return sanitize ? sanitize(raw, { ADD_ATTR: ["target", "rel", "id"] }) : raw;
+  return sanitize
+    ? sanitize(raw, { ADD_ATTR: ["target", "rel", "id"], ADD_TAGS: ["pre"] })
+    : raw;
 });
+
+const mermaidSvgCache = new Map<string, string>();
+let mermaidRunning = false;
+let needsRerun = false;
+
+async function renderMermaid() {
+  if (!mermaid || !containerRef.value) return;
+  const elements = containerRef.value.querySelectorAll("pre.mermaid");
+  if (elements.length === 0) return;
+
+  const toRender: Element[] = [];
+
+  // Apply cached SVGs synchronously to prevent flashing during streaming
+  for (const el of elements) {
+    const source = el.textContent?.trim() || "";
+    if (!source) continue;
+    const cached = mermaidSvgCache.get(source);
+    if (cached) {
+      el.innerHTML = cached;
+    } else {
+      toRender.push(el);
+    }
+  }
+
+  if (toRender.length === 0) return;
+
+  // Prevent concurrent mermaid.run() — nodes get detached by Vue's v-html updates
+  if (mermaidRunning) {
+    needsRerun = true;
+    return;
+  }
+  mermaidRunning = true;
+
+  try {
+    const sources = toRender.map((el) => el.textContent?.trim() || "");
+    await mermaid.run({ nodes: toRender });
+    for (let i = 0; i < toRender.length; i++) {
+      mermaidSvgCache.set(sources[i], toRender[i].innerHTML);
+    }
+  } catch {
+    // mermaid may fail if nodes were detached mid-render during streaming
+  } finally {
+    mermaidRunning = false;
+    if (needsRerun) {
+      needsRerun = false;
+      await nextTick();
+      renderMermaid();
+    }
+  }
+}
+
+onMounted(renderMermaid);
+watch(renderedHtml, renderMermaid, { flush: "post" });
 
 function handleAnchorClick(e: MouseEvent) {
   const link = (e.target as HTMLElement).closest("a.anchor-link");
@@ -145,6 +227,19 @@ function handleAnchorClick(e: MouseEvent) {
   padding: 0.15rem 0.35rem;
   border-radius: 3px;
   font-size: 0.9em;
+}
+
+.markdown-body :deep(pre.mermaid) {
+  background: transparent;
+  padding: 1rem 0;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.markdown-body :deep(pre.mermaid svg) {
+  max-width: 100%;
+  height: auto;
 }
 
 .markdown-body :deep(hr) {

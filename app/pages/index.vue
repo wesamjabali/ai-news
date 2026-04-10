@@ -28,7 +28,6 @@
         <span v-if="bannerState === 'generating'"
           >New briefing being generated…</span
         >
-        <span v-else>Fresh updates ready — tap to scroll up ↑</span>
       </div>
     </Transition>
 
@@ -213,6 +212,7 @@ function closeStream() {
 }
 
 let statusStream: EventSource | null = null;
+let statusReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 function connectStatusStream() {
   if (statusStream) return;
@@ -233,11 +233,46 @@ function connectStatusStream() {
       refreshHistory();
     }
   });
+
+  statusStream.onerror = () => {
+    closeStatusStream();
+    // Reconnect after a short delay
+    statusReconnectTimer = setTimeout(connectStatusStream, 3000);
+  };
 }
 
 function closeStatusStream() {
   statusStream?.close();
   statusStream = null;
+  if (statusReconnectTimer) {
+    clearTimeout(statusReconnectTimer);
+    statusReconnectTimer = null;
+  }
+}
+
+// Track the createdAt we're currently showing so we can detect new content on resume
+const lastSeenCreatedAt = computed(() => data.value?.createdAt ?? "");
+
+async function handleVisibilityChange() {
+  if (document.visibilityState !== "visible") return;
+
+  // Reconnect SSE if dead
+  if (!statusStream || statusStream.readyState === EventSource.CLOSED) {
+    closeStatusStream();
+    connectStatusStream();
+  }
+
+  // Poll for new content
+  const prev = lastSeenCreatedAt.value;
+  await refresh();
+  refreshHistory();
+
+  if (data.value?.generating && !streamContent.value) {
+    bannerState.value = "generating";
+    connectStream();
+  } else if (prev && data.value?.createdAt && data.value.createdAt !== prev) {
+    bannerState.value = "ready";
+  }
 }
 
 function handleBannerClick() {
@@ -249,6 +284,7 @@ function handleBannerClick() {
 
 onMounted(() => {
   connectStatusStream();
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 
   // Connect immediately if page loads while generation is in progress
   if (data.value?.generating) {
@@ -263,6 +299,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
   closeStatusStream();
   closeStream();
 });
