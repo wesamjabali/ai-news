@@ -2,7 +2,7 @@ import { getRecentSummaryCount } from "../database";
 import { generating } from "../utils/newsEvents";
 import { generate } from "./news.get";
 
-const MAX_PER_HOUR = 3;
+const MAX_PER_HOUR = 2;
 
 export default defineEventHandler(async (event) => {
   if (generating) {
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   if (recentCount >= MAX_PER_HOUR) {
     setResponseStatus(event, 429);
     return {
-      error: "Rate limit reached. Maximum 3 briefings per hour.",
+      error: "Rate limit reached. Maximum 2 briefings per hour.",
       recentCount,
     };
   }

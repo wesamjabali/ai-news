@@ -92,7 +92,7 @@ const isRequesting = ref(false);
 const canGenerate = computed(() => {
   if (streamContent.value) return false;
   if (data.value?.generating) return false;
-  if ((data.value?.recentCount ?? 0) >= 3) return false;
+  if ((data.value?.recentCount ?? 0) >= 2) return false;
   return true;
 });
 
