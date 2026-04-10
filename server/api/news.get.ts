@@ -1,8 +1,4 @@
-import {
-  getLatestSummary,
-  getRecentSummaryCount,
-  insertSummary,
-} from "../database";
+import { getLatestSummary, insertSummary } from "../database";
 import { streamSummarizeNews } from "../utils/gemini";
 import {
   appendInProgressContent,
@@ -63,14 +59,12 @@ export default defineEventHandler(async () => {
   }
 
   const latest = await getLatestSummary();
-  const recentCount = await getRecentSummaryCount();
 
   if (latest && isFresh(latest.createdAt)) {
     const response = {
       content: latest.content,
       createdAt: latest.createdAt,
       cached: true,
-      recentCount,
       generating,
     };
 
@@ -93,9 +87,8 @@ export default defineEventHandler(async () => {
       createdAt: latest.createdAt,
       cached: true,
       generating: true,
-      recentCount,
     };
   }
 
-  return { generating: true, recentCount };
+  return { generating: true };
 });

@@ -84,16 +84,18 @@ const { data, status, error, refresh } = await useFetch<{
   createdAt?: string;
   cached?: boolean;
   generating?: boolean;
-  recentCount?: number;
 }>("/api/news");
 
 const isRequesting = ref(false);
 
+const { data: canGenerateData, refresh: refreshCanGenerate } = await useFetch<{
+  canGenerate: boolean;
+}>("/api/can-generate", { lazy: true });
+
 const canGenerate = computed(() => {
   if (streamContent.value) return false;
   if (data.value?.generating) return false;
-  if ((data.value?.recentCount ?? 0) >= 2) return false;
-  return true;
+  return canGenerateData.value?.canGenerate ?? false;
 });
 
 async function requestGenerate() {
@@ -101,6 +103,7 @@ async function requestGenerate() {
   try {
     await $fetch("/api/news", { method: "POST" });
     data.value = { ...data.value, generating: true };
+    refreshCanGenerate();
   } catch (e: any) {
     console.error("Generate request failed:", e?.data?.error || e.message);
   } finally {
@@ -155,9 +158,9 @@ function connectStream() {
       content: streamContent.value,
       createdAt,
       cached: false,
-      recentCount: (data.value?.recentCount ?? 0) + 1,
     };
     streamContent.value = "";
+    refreshCanGenerate();
     closeStream();
   });
 
