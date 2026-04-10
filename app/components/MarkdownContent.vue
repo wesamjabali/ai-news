@@ -63,7 +63,7 @@ function handleAnchorClick(e: MouseEvent) {
     .replace(/^-|-$/g, "");
   const el =
     document.getElementById(normalized) || document.getElementById(rawSlug);
-  el?.scrollIntoView({ behavior: "smooth" });
+  el?.scrollIntoView({ behavior: "instant" });
 }
 </script>
 
