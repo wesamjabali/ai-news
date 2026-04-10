@@ -250,9 +250,8 @@ function handleAnchorClick(e: MouseEvent) {
 }
 
 .markdown-body :deep(img) {
-  width: 100%;
-  max-height: 400px;
-  object-fit: cover;
+  max-width: 100%;
+  height: auto;
   border-radius: 8px;
   margin: 0.5rem 0 1rem;
 }
