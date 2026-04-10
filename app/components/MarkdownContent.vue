@@ -130,25 +130,28 @@ async function renderMermaid() {
   }
 }
 
-function hidesBrokenImages() {
+function hideBrokenImages() {
   if (!containerRef.value) return;
   const images = containerRef.value.querySelectorAll("img");
   for (const img of images) {
-    img.onerror = () => {
-      img.style.display = "none";
-    };
+    if (!img.dataset.errorHandled) {
+      img.dataset.errorHandled = "1";
+      img.addEventListener("error", () => {
+        img.style.display = "none";
+      });
+    }
   }
 }
 
 onMounted(() => {
   renderMermaid();
-  hidesBrokenImages();
+  hideBrokenImages();
 });
 watch(
   renderedHtml,
   () => {
     renderMermaid();
-    nextTick(hidesBrokenImages);
+    nextTick(hideBrokenImages);
   },
   { flush: "post" },
 );
