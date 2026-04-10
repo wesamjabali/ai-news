@@ -12,7 +12,7 @@ function isFresh(createdAt: string): boolean {
 let generating = false;
 
 export default defineEventHandler(async () => {
-  const latest = getLatestSummary();
+  const latest = await getLatestSummary();
 
   if (latest && isFresh(latest.createdAt)) {
     return {
@@ -45,7 +45,7 @@ export default defineEventHandler(async () => {
     }
 
     const content = await summarizeNews(articles);
-    insertSummary(content);
+    await insertSummary(content);
 
     return {
       content,

@@ -1,6 +1,6 @@
 import { getAllSummaries } from "../database";
 
-export default defineEventHandler(() => {
-  const summaries = getAllSummaries();
+export default defineEventHandler(async () => {
+  const summaries = await getAllSummaries();
   return { summaries };
 });

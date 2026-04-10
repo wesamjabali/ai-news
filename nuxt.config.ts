@@ -42,7 +42,7 @@ export default defineNuxtConfig({
 
   nitro: {
     rollupConfig: {
-      external: ["better-sqlite3"],
+      external: ["sql.js"],
     },
   },
 });
