@@ -92,19 +92,34 @@ interface NewsItem {
   description: string;
   link: string;
   pubDate: string;
+  imageUrl?: string;
 }
 
 export async function fetchAllNews(): Promise<NewsItem[]> {
   const results = await Promise.allSettled(
     SOURCES.map(async (source) => {
       const feed = await parser.parseURL(source.url);
-      return feed.items.slice(0, 15).map((item) => ({
-        source: source.name,
-        title: item.title || "",
-        description: (item.contentSnippet || item.content || "").slice(0, 2000),
-        link: item.link || "",
-        pubDate: item.pubDate || "",
-      }));
+      return feed.items.slice(0, 15).map((item) => {
+        // Extract image from enclosure or <img> in content HTML
+        let imageUrl =
+          (item.enclosure?.type?.startsWith("image/") && item.enclosure.url) ||
+          "";
+        if (!imageUrl && item.content) {
+          const imgMatch = item.content.match(/<img[^>]+src=['"]([^'"]+)['"]/);
+          if (imgMatch?.[1]) imageUrl = imgMatch[1];
+        }
+        return {
+          source: source.name,
+          title: item.title || "",
+          description: (item.contentSnippet || item.content || "").slice(
+            0,
+            2000,
+          ),
+          link: item.link || "",
+          pubDate: item.pubDate || "",
+          ...(imageUrl && { imageUrl }),
+        };
+      });
     }),
   );
 

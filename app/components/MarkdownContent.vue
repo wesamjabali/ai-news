@@ -73,7 +73,10 @@ if (import.meta.client) {
 const renderedHtml = computed(() => {
   const raw = marked.parse(props.content, { async: false, renderer }) as string;
   return sanitize
-    ? sanitize(raw, { ADD_ATTR: ["target", "rel", "id"], ADD_TAGS: ["pre"] })
+    ? sanitize(raw, {
+        ADD_ATTR: ["target", "rel", "id", "alt", "loading"],
+        ADD_TAGS: ["pre", "img"],
+      })
     : raw;
 });
 
@@ -244,5 +247,13 @@ function handleAnchorClick(e: MouseEvent) {
 
 .markdown-body :deep(hr) {
   display: none;
+}
+
+.markdown-body :deep(img) {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 0.5rem 0 1rem;
 }
 </style>

@@ -25,6 +25,7 @@ Your task: Given a collection of recent news articles from multiple sources (inc
 - Use ### sub-headers within topic sections to break up distinct storylines
 - Use bullet lists and numbered lists where appropriate for clarity
 - Use \`---\` between major conceptual shifts within a section (but not between sections themselves — the ## headers handle that)
+- **Images:** Some articles include an image URL (marked "Image:"). When a detailed topic section (## header) has an article with a relevant image, embed it ONCE right after the ## header using markdown: \`![Brief descriptive alt text](image-url)\`. Only use images that are provided in the article data — never fabricate image URLs. Aim for 1 image per major section where available, but skip sections where no good image exists. Do NOT put images in Breaking News, Stories at a Glance, or Key Takeaways.
 - Attribute information to sources naturally and ALWAYS hyperlink the source name to the original article URL using markdown links (e.g., "according to [Middle East Eye](https://...article-url)", "[Al Jazeera Arabic reports](https://...article-url)")
 - When translating from Arabic/Hebrew sources, note the source language naturally (e.g., "reporting in Arabic, [Al Jazeera](url) revealed...")
 - When multiple articles inform a paragraph, cite each with its own hyperlink
@@ -34,10 +35,7 @@ Your task: Given a collection of recent news articles from multiple sources (inc
 
 ## Mermaid Diagrams
 
-When a situation involves complex relationships, timelines, or flows (e.g., ceasefire negotiations with multiple parties, military escalation chains, diplomatic relationships), include a Mermaid diagram to visually map it out. Use sparingly — only when it genuinely aids understanding. Wrap in a fenced code block with the \`mermaid\` language tag. Keep diagrams simple and readable. Good candidates:
-- Negotiation/mediation chains (who is talking to whom)
-- Escalation/de-escalation timelines
-- Regional alliance maps during a specific crisis
+Almost never use Mermaid diagrams. Only include one if the information is fundamentally spatial or relational in a way that text genuinely cannot convey clearly — e.g., a complex multi-party negotiation chain where 5+ actors are mediating through each other simultaneously. If the relationships or timeline can be explained in a sentence or a bullet list, use text instead. Default to NO diagram. When you do include one, wrap in a fenced code block with the \`mermaid\` language tag and keep it minimal.
 
 ## Tone & Content Rules
 
@@ -58,6 +56,7 @@ export async function* streamSummarizeNews(
     description: string;
     link: string;
     pubDate: string;
+    imageUrl?: string;
   }[],
 ): AsyncGenerator<string> {
   const config = useRuntimeConfig();
@@ -72,7 +71,7 @@ export async function* streamSummarizeNews(
   const articleText = articles
     .map(
       (a) =>
-        `[${a.source}] ${a.title}\nURL: ${a.link}\n${a.description}\nPublished: ${a.pubDate}`,
+        `[${a.source}] ${a.title}\nURL: ${a.link}${a.imageUrl ? `\nImage: ${a.imageUrl}` : ""}\n${a.description}\nPublished: ${a.pubDate}`,
     )
     .join("\n\n---\n\n");
 
@@ -110,7 +109,7 @@ export async function fetchBreakingFromSearch(): Promise<
       model: "gemini-3-flash-preview",
       contents: `List the most important breaking news stories from the last 24 hours about Palestine, Gaza, the Middle East, and related geopolitics. For each story, provide:
 - A clear headline
-- A 3-4 sentence summary of what happened
+- A 3-4 sentence summary. Focus on the key facts and context, not just vague generalities. Include any critical details that help understand the significance of the story.
 - The source URL if available
 
 Focus on events that are actively unfolding or just happened. Include stories from Arabic-language sources when possible, but only output summaries in English. Return 5-10 stories maximum. Format each as:
