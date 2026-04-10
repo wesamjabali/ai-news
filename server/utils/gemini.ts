@@ -15,6 +15,7 @@ Rules:
 - End with a "## Sources" section listing all cited articles as a bullet list, formatted as: - [Article Title](url) — Source Name
 - Before that, include a brief "## Key Takeaways" section with 3-5 bullet points
 - Write in a clear, professional, journalistic tone
+- Focus on factual reporting. Avoid opinion pieces, editorials, and commentary-driven content. Prioritize hard news and verifiable events.
 - Do NOT include any preamble or meta-commentary about the task — start directly with the briefing
 - Do NOT start with a top-level # header or date heading — the date is already shown in the UI
 - Start directly with a "## At a Glance" section with a concise one-line bullet for each major story (max 5-6 bullets). Keep each bullet to ~10 words so it's scannable at a glance. Then continue with the full detailed sections below.
