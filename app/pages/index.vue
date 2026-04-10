@@ -47,14 +47,6 @@
         >
         <span v-if="streamContent" class="cached-badge">live</span>
         <span v-else-if="data?.cached" class="cached-badge">cached</span>
-        <button
-          v-if="canGenerate"
-          class="generate-btn"
-          :disabled="isRequesting"
-          @click="requestGenerate"
-        >
-          {{ isRequesting ? "Requesting…" : "Generate New" }}
-        </button>
       </div>
       <MarkdownContent :content="streamContent || data!.content!" />
     </div>
@@ -89,6 +81,15 @@
         </div>
       </div>
     </div>
+
+    <button
+      v-if="canGenerate"
+      class="generate-btn"
+      :disabled="isRequesting"
+      @click="requestGenerate"
+    >
+      {{ isRequesting ? "Requesting…" : "Generate New" }}
+    </button>
   </div>
 </template>
 
@@ -339,7 +340,8 @@ useHead({
 }
 
 .generate-btn {
-  margin-left: auto;
+  display: block;
+  margin: 2rem auto 0;
   background: none;
   border: 1px solid var(--border);
   color: var(--text);
