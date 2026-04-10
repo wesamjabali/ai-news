@@ -5,7 +5,11 @@
     </header>
 
     <LoadingScreen
-      v-if="(status === 'pending' || data?.generating) && !streamContent"
+      v-if="
+        !data?.content &&
+        !streamContent &&
+        (status === 'pending' || data?.generating)
+      "
     />
 
     <div v-else-if="status === 'error' && !streamContent" class="error-state">
@@ -42,8 +46,16 @@
     </div>
 
     <div v-if="previousBriefings.length" class="history-section">
-      <h2 class="history-heading">Previous Briefings</h2>
-      <div class="history-list">
+      <button
+        class="history-section-toggle"
+        @click="historyOpen = !historyOpen"
+      >
+        <h2 class="history-heading">
+          Previous Briefings ({{ previousBriefings.length }})
+        </h2>
+        <span class="toggle-icon">{{ historyOpen ? "−" : "+" }}</span>
+      </button>
+      <div v-if="historyOpen" class="history-list">
         <div
           v-for="summary in previousBriefings"
           :key="summary.id"
@@ -73,9 +85,7 @@ const { data, status, error, refresh } = await useFetch<{
   cached?: boolean;
   generating?: boolean;
   recentCount?: number;
-}>("/api/news", {
-  lazy: true,
-});
+}>("/api/news");
 
 const isRequesting = ref(false);
 
@@ -109,6 +119,7 @@ const previousBriefings = computed(() => {
 });
 
 const expanded = ref(new Set<number>());
+const historyOpen = ref(false);
 
 function toggle(id: number) {
   const next = new Set(expanded.value);
@@ -131,6 +142,11 @@ function connectStream() {
   eventSource.addEventListener("chunk", (e) => {
     const { text } = JSON.parse(e.data);
     streamContent.value += text;
+  });
+
+  eventSource.addEventListener("idle", () => {
+    closeStream();
+    refresh();
   });
 
   eventSource.addEventListener("done", (e) => {
@@ -284,11 +300,29 @@ useHead({
   border-top: 1px solid var(--border);
 }
 
+.history-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+  font-family: inherit;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.history-section-toggle:hover {
+  color: var(--text);
+}
+
 .history-heading {
   font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 1rem;
-  color: var(--text-muted);
+  color: inherit;
 }
 
 .history-list {

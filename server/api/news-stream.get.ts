@@ -1,4 +1,8 @@
-import { newsEmitter } from "../utils/newsEvents";
+import {
+  generating,
+  inProgressContent,
+  newsEmitter,
+} from "../utils/newsEvents";
 
 export default defineEventHandler((event) => {
   setResponseHeaders(event, {
@@ -10,6 +14,19 @@ export default defineEventHandler((event) => {
   const send = (name: string, data: unknown) => {
     event.node.res.write(`event: ${name}\ndata: ${JSON.stringify(data)}\n\n`);
   };
+
+  // If not currently generating, tell client to re-fetch from API
+  if (!generating) {
+    send("idle", {});
+    event.node.res.end();
+    event._handled = true;
+    return;
+  }
+
+  // Send any content accumulated so far (for late-joining clients)
+  if (inProgressContent) {
+    send("chunk", { text: inProgressContent });
+  }
 
   const onChunk = (text: string) => {
     send("chunk", { text });

@@ -57,7 +57,7 @@ export async function* streamSummarizeNews(
       },
     ],
     generationConfig: {
-      maxOutputTokens: 4096,
+      maxOutputTokens: 16384,
       temperature: 0.3,
     },
   });

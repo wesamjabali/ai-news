@@ -4,10 +4,23 @@ import {
   insertSummary,
 } from "../database";
 import { streamSummarizeNews } from "../utils/gemini";
-import { generating, newsEmitter, setGenerating } from "../utils/newsEvents";
+import {
+  appendInProgressContent,
+  generating,
+  newsEmitter,
+  resetInProgressContent,
+  setGenerating,
+} from "../utils/newsEvents";
 import { fetchAllNews } from "../utils/sources";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
+const CACHE_TTL_MS = 30_000;
+
+let _cache: { response: any; expires: number } | null = null;
+
+export function invalidateCache() {
+  _cache = null;
+}
 
 function isFresh(createdAt: string): boolean {
   const created = new Date(createdAt + "Z");
@@ -16,6 +29,7 @@ function isFresh(createdAt: string): boolean {
 
 export async function generate() {
   setGenerating(true);
+  resetInProgressContent();
   try {
     const articles = await fetchAllNews();
 
@@ -27,10 +41,12 @@ export async function generate() {
     let fullContent = "";
     for await (const chunk of streamSummarizeNews(articles)) {
       fullContent += chunk;
+      appendInProgressContent(chunk);
       newsEmitter.emit("chunk", chunk);
     }
 
     await insertSummary(fullContent);
+    _cache = null;
     const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
     newsEmitter.emit("done", { createdAt });
   } catch (e: any) {
@@ -41,18 +57,31 @@ export async function generate() {
 }
 
 export default defineEventHandler(async () => {
+  // Serve from in-memory cache if fresh and not generating
+  if (_cache && Date.now() < _cache.expires && !generating) {
+    return _cache.response;
+  }
+
   const latest = await getLatestSummary();
   const recentCount = await getRecentSummaryCount();
 
   if (latest && isFresh(latest.createdAt)) {
-    return {
+    const response = {
       content: latest.content,
       createdAt: latest.createdAt,
       cached: true,
       recentCount,
       generating,
     };
+
+    if (!generating) {
+      _cache = { response, expires: Date.now() + CACHE_TTL_MS };
+    }
+
+    return response;
   }
+
+  _cache = null;
 
   if (!generating) {
     generate();
