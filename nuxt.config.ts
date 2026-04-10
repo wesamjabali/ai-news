@@ -39,7 +39,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     geminiApiKey: process.env.GEMINI_API_KEY || "",
     public: {
-      maxUpdates: Number(process.env.MAX_UPDATES) || 90,
+      maxUpdates: Number(process.env.MAX_UPDATES) || 2,
     },
   },
 
