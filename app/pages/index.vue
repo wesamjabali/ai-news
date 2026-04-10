@@ -6,9 +6,8 @@
 
     <LoadingScreen
       v-if="
-        !data?.content &&
-        !streamContent &&
-        (status === 'pending' || data?.generating)
+        (status === 'pending' && !data?.content && !streamContent) ||
+        (data?.generating && !streamContent)
       "
     />
 
@@ -24,7 +23,12 @@
       <button class="retry-btn" @click="refresh()">Try Again</button>
     </div>
 
-    <div v-if="streamContent || data?.content">
+    <div
+      v-if="
+        (streamContent || data?.content) &&
+        !(data?.generating && !streamContent)
+      "
+    >
       <div class="meta">
         <time
           v-if="data?.createdAt && !streamContent"
@@ -102,6 +106,10 @@ async function requestGenerate() {
   isRequesting.value = true;
   try {
     await $fetch("/api/news", { method: "POST" });
+    // Collapse all briefings
+    historyOpen.value = false;
+    expanded.value = new Set();
+    // Set generating to show loading screen
     data.value = { ...data.value, generating: true };
     refreshCanGenerate();
   } catch (e: any) {
@@ -182,6 +190,11 @@ watch(data, (val) => {
     connectStream();
   }
 });
+
+// Connect immediately if page loads while generation is in progress
+if (data.value?.generating) {
+  connectStream();
+}
 
 onUnmounted(() => {
   closeStream();
