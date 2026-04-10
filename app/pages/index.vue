@@ -221,6 +221,7 @@ function connectStatusStream() {
   statusStream.addEventListener("generation-start", () => {
     didStream.value = false;
     bannerState.value = "generating";
+    connectStream();
   });
 
   statusStream.addEventListener("generation-done", () => {
@@ -230,8 +231,8 @@ function connectStatusStream() {
     } else {
       bannerState.value = "ready";
       refresh();
-      refreshHistory();
     }
+    refreshHistory();
   });
 
   statusStream.onerror = () => {

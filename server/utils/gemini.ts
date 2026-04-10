@@ -30,6 +30,7 @@ Your task: Given a collection of recent news articles from multiple sources (inc
 - When multiple articles inform a paragraph, cite each with its own hyperlink
 - Include relevant numbers, quotes, and specifics — be detailed
 - Focus on events most relevant to Palestinians and the broader region
+- **CRITICAL: URLs must be copied EXACTLY as provided in the article data — never decode, re-encode, transliterate, or modify percent-encoded sequences. Paste the raw URL string as-is into markdown links.**
 
 ## Mermaid Diagrams
 
@@ -76,11 +77,11 @@ export async function* streamSummarizeNews(
     .join("\n\n---\n\n");
 
   const response = await ai.models.generateContentStream({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3-flash-preview",
     contents: `${SYSTEM_PROMPT}\n\nHere are the latest articles:\n\n${articleText}`,
     config: {
-      maxOutputTokens: 16384,
-      temperature: 0.3,
+      maxOutputTokens: 26624,
+      temperature: 0.4,
     },
   });
 
@@ -106,7 +107,7 @@ export async function fetchBreakingFromSearch(): Promise<
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: `List the most important breaking news stories from the last 24 hours about Palestine, Gaza, the Middle East, and related geopolitics. For each story, provide:
 - A clear headline
 - A 3-4 sentence summary of what happened
@@ -120,7 +121,7 @@ URL: ...
 ---`,
       config: {
         tools: [{ googleSearch: {} }],
-        temperature: 0.2,
+        temperature: 0.3,
       },
     });
 
@@ -145,4 +146,49 @@ URL: ...
     console.error("Breaking news search failed:", e);
     return [];
   }
+}
+
+/**
+ * Fix markdown links where the LLM partially decoded percent-encoded URLs,
+ * producing raw Unicode or spaces inside the URL portion.
+ */
+export function fixBrokenMarkdownUrls(markdown: string): string {
+  // Match markdown links: [text](url)
+  return markdown.replace(
+    /\[([^\]]*)\]\((https?:\/\/[^)]*)\)/g,
+    (_match, text, url) => {
+      // If the URL only contains ASCII and standard URL characters, it's fine
+      if (/^[\x20-\x7E]+$/.test(url) && !/\s/.test(url)) {
+        return `[${text}](${url})`;
+      }
+
+      try {
+        // Parse the URL to isolate the path/query/fragment
+        const parsed = new URL(url.trim());
+
+        // Re-encode each path segment: decode first (to handle mixed
+        // encoded/raw chars), then re-encode properly
+        parsed.pathname = parsed.pathname
+          .split("/")
+          .map((segment) => {
+            try {
+              return encodeURIComponent(decodeURIComponent(segment));
+            } catch {
+              return encodeURIComponent(segment);
+            }
+          })
+          .join("/");
+
+        return `[${text}](${parsed.toString()})`;
+      } catch {
+        // If URL parsing fails, try basic fixup: encode non-ASCII chars and
+        // remove stray spaces
+        const fixed = url
+          .trim()
+          .replace(/\s+/g, "")
+          .replace(/[^\x20-\x7E]/g, (ch: string) => encodeURIComponent(ch));
+        return `[${text}](${fixed})`;
+      }
+    },
+  );
 }

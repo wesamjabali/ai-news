@@ -3,7 +3,11 @@ import {
   getRecentSummaryCount,
   insertSummary,
 } from "../database";
-import { fetchBreakingFromSearch, streamSummarizeNews } from "../utils/gemini";
+import {
+  fetchBreakingFromSearch,
+  fixBrokenMarkdownUrls,
+  streamSummarizeNews,
+} from "../utils/gemini";
 import {
   appendInProgressContent,
   generating,
@@ -52,6 +56,7 @@ export async function generate() {
       newsEmitter.emit("chunk", chunk);
     }
 
+    fullContent = fixBrokenMarkdownUrls(fullContent);
     await insertSummary(fullContent);
     _cache = null;
     const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
