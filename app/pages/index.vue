@@ -4,10 +4,25 @@
       <h1 class="site-title">News Briefing</h1>
     </header>
 
+    <Transition name="banner">
+      <div
+        v-if="bannerState !== 'hidden'"
+        class="news-banner"
+        :class="bannerState"
+        @click="handleBannerClick"
+      >
+        <span v-if="bannerState === 'generating'"
+          >New briefing being generated…</span
+        >
+        <span v-else>Fresh updates ready — tap to scroll up ↑</span>
+      </div>
+    </Transition>
+
     <LoadingScreen
       v-if="
-        (status === 'pending' && !data?.content && !streamContent) ||
-        (data?.generating && !streamContent)
+        !data?.content &&
+        !streamContent &&
+        (status === 'pending' || data?.generating)
       "
     />
 
@@ -23,12 +38,7 @@
       <button class="retry-btn" @click="refresh()">Try Again</button>
     </div>
 
-    <div
-      v-if="
-        (streamContent || data?.content) &&
-        !(data?.generating && !streamContent)
-      "
-    >
+    <div v-if="streamContent || data?.content">
       <div class="meta">
         <time
           v-if="data?.createdAt && !streamContent"
@@ -88,30 +98,25 @@ const { data, status, error, refresh } = await useFetch<{
   createdAt?: string;
   cached?: boolean;
   generating?: boolean;
+  recentCount?: number;
 }>("/api/news");
 
 const isRequesting = ref(false);
-
-const { data: canGenerateData, refresh: refreshCanGenerate } = await useFetch<{
-  canGenerate: boolean;
-}>("/api/can-generate", { lazy: true });
+const bannerState = ref<"hidden" | "generating" | "ready">("hidden");
+const didStream = ref(false);
 
 const canGenerate = computed(() => {
   if (streamContent.value) return false;
   if (data.value?.generating) return false;
-  return canGenerateData.value?.canGenerate ?? false;
+  if ((data.value?.recentCount ?? 0) >= 3) return false;
+  return true;
 });
 
 async function requestGenerate() {
   isRequesting.value = true;
   try {
     await $fetch("/api/news", { method: "POST" });
-    // Collapse all briefings
-    historyOpen.value = false;
-    expanded.value = new Set();
-    // Set generating to show loading screen
     data.value = { ...data.value, generating: true };
-    refreshCanGenerate();
   } catch (e: any) {
     console.error("Generate request failed:", e?.data?.error || e.message);
   } finally {
@@ -119,7 +124,7 @@ async function requestGenerate() {
   }
 }
 
-const { data: historyData } = await useFetch<{
+const { data: historyData, refresh: refreshHistory } = await useFetch<{
   summaries: { id: number; content: string; createdAt: string }[];
 }>("/api/history", { lazy: true });
 
@@ -148,6 +153,7 @@ const streamContent = ref("");
 function connectStream() {
   if (eventSource) return;
   streamContent.value = "";
+  didStream.value = true;
   eventSource = new EventSource("/api/news-stream");
 
   eventSource.addEventListener("chunk", (e) => {
@@ -166,9 +172,9 @@ function connectStream() {
       content: streamContent.value,
       createdAt,
       cached: false,
+      recentCount: (data.value?.recentCount ?? 0) + 1,
     };
     streamContent.value = "";
-    refreshCanGenerate();
     closeStream();
   });
 
@@ -185,6 +191,43 @@ function closeStream() {
   eventSource = null;
 }
 
+let statusStream: EventSource | null = null;
+
+function connectStatusStream() {
+  if (statusStream) return;
+  statusStream = new EventSource("/api/status-stream");
+
+  statusStream.addEventListener("generation-start", () => {
+    didStream.value = false;
+    if (!streamContent.value && !data.value?.generating) {
+      bannerState.value = "generating";
+    }
+  });
+
+  statusStream.addEventListener("generation-done", () => {
+    if (didStream.value) {
+      bannerState.value = "hidden";
+      didStream.value = false;
+    } else {
+      bannerState.value = "ready";
+      refresh();
+      refreshHistory();
+    }
+  });
+}
+
+function closeStatusStream() {
+  statusStream?.close();
+  statusStream = null;
+}
+
+function handleBannerClick() {
+  if (bannerState.value === "ready") {
+    bannerState.value = "hidden";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
 watch(data, (val) => {
   if (val?.generating) {
     connectStream();
@@ -196,7 +239,12 @@ if (data.value?.generating) {
   connectStream();
 }
 
+onMounted(() => {
+  connectStatusStream();
+});
+
 onUnmounted(() => {
+  closeStatusStream();
   closeStream();
 });
 
@@ -220,7 +268,9 @@ useHead({
 
 <style scoped>
 .site-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .site-title {
@@ -232,9 +282,8 @@ useHead({
 .meta {
   margin-bottom: 1.5rem;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .meta time {
@@ -295,7 +344,6 @@ useHead({
   cursor: pointer;
   font-size: 0.8rem;
   font-family: inherit;
-  white-space: nowrap;
   transition:
     border-color 0.2s ease,
     opacity 0.2s ease;
@@ -312,7 +360,8 @@ useHead({
 
 .history-section {
   margin-top: 3rem;
-  padding-top: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
 }
 
 .history-section-toggle {
@@ -395,5 +444,43 @@ useHead({
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.news-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  text-align: center;
+  padding: 0.45rem 1rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.45rem);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.news-banner.ready {
+  cursor: pointer;
+  color: var(--link);
+}
+
+.news-banner.ready:hover {
+  color: var(--link-hover);
+}
+
+.banner-enter-active,
+.banner-leave-active {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.banner-enter-from,
+.banner-leave-to {
+  opacity: 0;
+  transform: translateY(-100%);
 }
 </style>

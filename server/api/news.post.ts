@@ -1,5 +1,4 @@
 import { getRecentSummaryCount } from "../database";
-import { isHomeRequest } from "../utils/homeCheck";
 import { generating } from "../utils/newsEvents";
 import { generate } from "./news.get";
 
@@ -11,10 +10,8 @@ export default defineEventHandler(async (event) => {
     return { error: "A briefing is already being generated." };
   }
 
-  const isHome = await isHomeRequest(event);
-
   const recentCount = await getRecentSummaryCount();
-  if (!isHome && recentCount >= MAX_PER_HOUR) {
+  if (recentCount >= MAX_PER_HOUR) {
     setResponseStatus(event, 429);
     return {
       error: "Rate limit reached. Maximum 2 briefings per hour.",
