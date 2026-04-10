@@ -19,6 +19,8 @@ RUN apk add --no-cache libstdc++
 WORKDIR /app
 
 COPY --from=build /app/.output .output
+COPY --from=build /app/node_modules/.pnpm/better-sqlite3@12.8.0/node_modules/better-sqlite3 node_modules/better-sqlite3
+COPY --from=build /app/node_modules/.pnpm/better-sqlite3@12.8.0/node_modules/bindings node_modules/bindings
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
