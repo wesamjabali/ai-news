@@ -21,7 +21,7 @@ export default defineNuxtConfig({
           media: "(prefers-color-scheme: dark)",
           content: "#0c0a09",
         },
-        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "mobile-web-app-capable", content: "yes" },
         {
           name: "apple-mobile-web-app-status-bar-style",
           content: "black-translucent",
