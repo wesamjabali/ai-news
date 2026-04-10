@@ -5,12 +5,30 @@
 <script setup lang="ts">
 import { marked } from "marked";
 
+const renderer = new marked.Renderer();
+renderer.link = ({ href, text }) => {
+  if (href?.startsWith("http")) {
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+  }
+  return `<a href="${href}">${text}</a>`;
+};
+
 const props = defineProps<{
   content: string;
 }>();
 
+let sanitize:
+  | ((html: string, config?: Record<string, unknown>) => string)
+  | null = null;
+
+if (import.meta.client) {
+  const DOMPurify = (await import("dompurify")).default;
+  sanitize = (html, config) => DOMPurify.sanitize(html, config);
+}
+
 const renderedHtml = computed(() => {
-  return marked.parse(props.content, { async: false }) as string;
+  const raw = marked.parse(props.content, { async: false, renderer }) as string;
+  return sanitize ? sanitize(raw, { ADD_ATTR: ["target", "rel"] }) : raw;
 });
 </script>
 

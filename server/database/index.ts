@@ -68,6 +68,16 @@ export async function insertSummary(content: string) {
   return result[0].values[0][0];
 }
 
+export async function getRecentSummaryCount(minutes = 60): Promise<number> {
+  const db = await getDb();
+  const result = db.exec(
+    `SELECT COUNT(*) FROM summaries WHERE created_at > datetime('now', '-' || ? || ' minutes')`,
+    [minutes],
+  );
+  if (result.length === 0) return 0;
+  return result[0].values[0][0] as number;
+}
+
 export async function getAllSummaries(): Promise<SummaryRow[]> {
   const db = await getDb();
   const result = db.exec(

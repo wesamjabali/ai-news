@@ -1,5 +1,10 @@
-import { getLatestSummary, insertSummary } from "../database";
-import { summarizeNews } from "../utils/gemini";
+import {
+  getLatestSummary,
+  getRecentSummaryCount,
+  insertSummary,
+} from "../database";
+import { streamSummarizeNews } from "../utils/gemini";
+import { generating, newsEmitter, setGenerating } from "../utils/newsEvents";
 import { fetchAllNews } from "../utils/sources";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -9,50 +14,59 @@ function isFresh(createdAt: string): boolean {
   return Date.now() - created.getTime() < ONE_HOUR_MS;
 }
 
-let generating = false;
+export async function generate() {
+  setGenerating(true);
+  try {
+    const articles = await fetchAllNews();
+
+    if (articles.length === 0) {
+      newsEmitter.emit("error", "Could not fetch news from any source.");
+      return;
+    }
+
+    let fullContent = "";
+    for await (const chunk of streamSummarizeNews(articles)) {
+      fullContent += chunk;
+      newsEmitter.emit("chunk", chunk);
+    }
+
+    await insertSummary(fullContent);
+    const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
+    newsEmitter.emit("done", { createdAt });
+  } catch (e: any) {
+    newsEmitter.emit("error", e?.message || "Generation failed");
+  } finally {
+    setGenerating(false);
+  }
+}
 
 export default defineEventHandler(async () => {
   const latest = await getLatestSummary();
+  const recentCount = await getRecentSummaryCount();
 
   if (latest && isFresh(latest.createdAt)) {
     return {
       content: latest.content,
       createdAt: latest.createdAt,
       cached: true,
+      recentCount,
+      generating,
     };
   }
 
-  if (generating) {
-    if (latest) {
-      return {
-        content: latest.content,
-        createdAt: latest.createdAt,
-        cached: true,
-      };
-    }
-    return { generating: true };
+  if (!generating) {
+    generate();
   }
 
-  generating = true;
-  try {
-    const articles = await fetchAllNews();
-
-    if (articles.length === 0) {
-      throw createError({
-        statusCode: 502,
-        statusMessage: "Could not fetch news from any source.",
-      });
-    }
-
-    const content = await summarizeNews(articles);
-    await insertSummary(content);
-
+  if (latest) {
     return {
-      content,
-      createdAt: new Date().toISOString().replace("T", " ").slice(0, 19),
-      cached: false,
+      content: latest.content,
+      createdAt: latest.createdAt,
+      cached: true,
+      generating: true,
+      recentCount,
     };
-  } finally {
-    generating = false;
   }
+
+  return { generating: true, recentCount };
 });

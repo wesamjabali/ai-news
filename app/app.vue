@@ -20,15 +20,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0c0a09;
-    --text: #e7e5e4;
-    --text-muted: #a8a29e;
-    --border: #292524;
-    --link: #fb923c;
-    --link-hover: #fdba74;
-    --code-bg: #1c1917;
-    --blockquote-border: #d97706;
-    --accent: #fbbf24;
+    --bg: #1a1714;
+    --text: #c8c0b6;
+    --text-muted: #8a8078;
+    --border: #2e2925;
+    --link: #d4976a;
+    --link-hover: #e8b48e;
+    --code-bg: #231f1b;
+    --blockquote-border: #c4873a;
+    --accent: #d4a056;
   }
 }
 
@@ -45,9 +45,8 @@ html {
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: "Merriweather", "Georgia", "Times New Roman", serif;
+  letter-spacing: 0.015em;
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.7;

@@ -1,7 +1,7 @@
 {
-    "name": "Palestine News Briefing",
-    "short_name": "Palestine News",
-    "description": "AI-powered daily news briefings on Palestine from trusted sources",
+    "name": "News Briefing",
+    "short_name": "News",
+    "description": "AI-powered daily news briefings from trusted sources",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#fafaf9",

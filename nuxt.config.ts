@@ -19,14 +19,14 @@ export default defineNuxtConfig({
         {
           name: "theme-color",
           media: "(prefers-color-scheme: dark)",
-          content: "#0c0a09",
+          content: "#1a1714",
         },
         { name: "mobile-web-app-capable", content: "yes" },
         {
           name: "apple-mobile-web-app-status-bar-style",
           content: "black-translucent",
         },
-        { name: "apple-mobile-web-app-title", content: "Palestine News" },
+        { name: "apple-mobile-web-app-title", content: "News" },
       ],
       link: [
         { rel: "icon", type: "image/png", href: "/favicon.ico" },
