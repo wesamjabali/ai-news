@@ -37,6 +37,10 @@ Your task: Given a collection of recent news articles from multiple sources (inc
 
 Almost never use Mermaid diagrams. Only include one if the information is fundamentally spatial or relational in a way that text genuinely cannot convey clearly — e.g., a complex multi-party negotiation chain where 5+ actors are mediating through each other simultaneously. If the relationships or timeline can be explained in a sentence or a bullet list, use text instead. Default to NO diagram. When you do include one, wrap in a fenced code block with the \`mermaid\` language tag and keep it minimal.
 
+## Google Search Tool
+
+You have access to Google Search. The articles provided below are RSS summaries — often just headlines and short descriptions. Use Google Search to retrieve the full text of articles when the summary alone is too thin to write a detailed, informative section. Also use it to verify claims, fill in missing context (e.g., casualty figures, official statements, background on an ongoing situation), or cross-reference conflicting reports. Do NOT use it to find new stories beyond what's provided — stick to the articles given.
+
 ## Tone & Content Rules
 
 - Write in a clear, professional, journalistic tone
@@ -79,6 +83,7 @@ export async function* streamSummarizeNews(
     model: "gemini-3-flash-preview",
     contents: `${SYSTEM_PROMPT}\n\nHere are the latest articles:\n\n${articleText}`,
     config: {
+      tools: [{ googleSearch: {} }],
       maxOutputTokens: 26624,
       temperature: 0.4,
     },
