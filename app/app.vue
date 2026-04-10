@@ -61,6 +61,12 @@ body {
     color 0.3s ease;
 }
 
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
 #app {
   max-width: 720px;
   margin: 0 auto;

@@ -1,5 +1,19 @@
 <template>
-  <div>
+  <div
+    @touchstart.passive="onTouchStart"
+    @touchmove.passive="onTouchMove"
+    @touchend.passive="onTouchEnd"
+  >
+    <Transition name="pull-indicator">
+      <div
+        v-if="pullDistance > 0"
+        class="pull-indicator"
+        :style="{ height: pullDisplay + 'px' }"
+      >
+        <span class="pull-icon" :class="{ releasing: pullReady }">↓</span>
+      </div>
+    </Transition>
+
     <header class="site-header">
       <h1 class="site-title">News Briefing</h1>
     </header>
@@ -266,6 +280,46 @@ function formatDate(dateStr: string): string {
   });
 }
 
+// Pull-to-refresh (PWA standalone only)
+const isPwa = ref(false);
+const pullDistance = ref(0);
+const pullReady = computed(() => pullDistance.value >= 80);
+const pullDisplay = computed(() => Math.min(pullDistance.value, 120));
+let touchStartY = 0;
+let pulling = false;
+
+onMounted(() => {
+  isPwa.value =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as any).standalone === true;
+});
+
+function onTouchStart(e: TouchEvent) {
+  if (!isPwa.value || window.scrollY > 0 || !e.touches.length) return;
+  touchStartY = e.touches[0]!.clientY;
+  pulling = true;
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (!pulling || !e.touches.length) return;
+  const dy = e.touches[0]!.clientY - touchStartY;
+  if (dy < 0) {
+    pullDistance.value = 0;
+    return;
+  }
+  pullDistance.value = dy * 0.5;
+}
+
+function onTouchEnd() {
+  if (!pulling) return;
+  pulling = false;
+  if (pullReady.value) {
+    refresh();
+    refreshHistory();
+  }
+  pullDistance.value = 0;
+}
+
 useHead({
   title: "News Briefing",
 });
@@ -488,5 +542,23 @@ useHead({
 .banner-leave-to {
   opacity: 0;
   transform: translateY(-100%);
+}
+
+.pull-indicator {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--text-muted);
+  padding-bottom: 0.5rem;
+}
+
+.pull-icon {
+  font-size: 1.2rem;
+  transition: transform 0.2s ease;
+}
+
+.pull-icon.releasing {
+  transform: rotate(180deg);
 }
 </style>
