@@ -121,7 +121,9 @@ async function requestGenerate() {
   isRequesting.value = true;
   try {
     await $fetch("/api/news", { method: "POST" });
-    data.value = { ...data.value, generating: true };
+    historyOpen.value = false;
+    expanded.value = new Set();
+    data.value = { generating: true };
   } catch (e: any) {
     console.error("Generate request failed:", e?.data?.error || e.message);
   } finally {
@@ -204,9 +206,7 @@ function connectStatusStream() {
 
   statusStream.addEventListener("generation-start", () => {
     didStream.value = false;
-    if (!streamContent.value && !data.value?.generating) {
-      bannerState.value = "generating";
-    }
+    bannerState.value = "generating";
   });
 
   statusStream.addEventListener("generation-done", () => {
