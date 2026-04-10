@@ -17,7 +17,6 @@ import {
 } from "../utils/newsEvents";
 import { fetchAllNews } from "../utils/sources";
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
 const CACHE_TTL_MS = 30_000;
 
 let _cache: { response: any; expires: number } | null = null;
@@ -26,9 +25,16 @@ export function invalidateCache() {
   _cache = null;
 }
 
+function getWindowMs(): number {
+  const {
+    public: { updateWindowHours },
+  } = useRuntimeConfig();
+  return updateWindowHours * 60 * 60 * 1000;
+}
+
 function isFresh(createdAt: string): boolean {
   const created = new Date(createdAt + "Z");
-  return Date.now() - created.getTime() < ONE_HOUR_MS;
+  return Date.now() - created.getTime() < getWindowMs();
 }
 
 export async function generate() {
@@ -74,8 +80,13 @@ export default defineEventHandler(async () => {
     return _cache.response;
   }
 
+  const {
+    public: { updateWindowHours },
+  } = useRuntimeConfig();
+  const windowMinutes = updateWindowHours * 60;
+
   const latest = await getLatestSummary();
-  const recentCount = await getRecentSummaryCount();
+  const recentCount = await getRecentSummaryCount(windowMinutes);
 
   if (latest && isFresh(latest.createdAt)) {
     const response = {
