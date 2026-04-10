@@ -34,22 +34,29 @@ const renderedHtml = computed(() => {
 
 <style scoped>
 .markdown-body :deep(h1) {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
   line-height: 1.3;
   color: var(--text);
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
 }
 
 .markdown-body :deep(h2) {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 600;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
   line-height: 1.3;
   color: var(--text);
+}
+
+@media (min-width: 640px) {
+  .markdown-body :deep(h1) {
+    font-size: 1.75rem;
+  }
+  .markdown-body :deep(h2) {
+    font-size: 1.35rem;
+  }
 }
 
 .markdown-body :deep(h3) {
@@ -106,8 +113,6 @@ const renderedHtml = computed(() => {
 }
 
 .markdown-body :deep(hr) {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 2rem 0;
+  display: none;
 }
 </style>

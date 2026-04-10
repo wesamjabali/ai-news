@@ -207,9 +207,7 @@ useHead({
 
 <style scoped>
 .site-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
 }
 
 .site-title {
@@ -221,8 +219,9 @@ useHead({
 .meta {
   margin-bottom: 1.5rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .meta time {
@@ -283,6 +282,7 @@ useHead({
   cursor: pointer;
   font-size: 0.8rem;
   font-family: inherit;
+  white-space: nowrap;
   transition:
     border-color 0.2s ease,
     opacity 0.2s ease;
@@ -299,8 +299,7 @@ useHead({
 
 .history-section {
   margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border);
+  padding-top: 1rem;
 }
 
 .history-section-toggle {

@@ -16,8 +16,9 @@ Rules:
 - Before that, include a brief "## Key Takeaways" section with 3-5 bullet points
 - Write in a clear, professional, journalistic tone
 - Do NOT include any preamble or meta-commentary about the task — start directly with the briefing
-- Start with a single # header that includes today's date in a readable format
-- Immediately after the # date header, include a short "## At a Glance" section with a concise one-line bullet for each major story (max 5-6 bullets). Keep each bullet to ~10 words so it's scannable at a glance. Then continue with the full detailed sections below.`;
+- Do NOT start with a top-level # header or date heading — the date is already shown in the UI
+- Start directly with a "## At a Glance" section with a concise one-line bullet for each major story (max 5-6 bullets). Keep each bullet to ~10 words so it's scannable at a glance. Then continue with the full detailed sections below.
+- Do NOT use horizontal rules (---) anywhere in the output`;
 
 export async function* streamSummarizeNews(
   articles: {

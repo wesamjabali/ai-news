@@ -17,7 +17,7 @@ async function getHomeIps(): Promise<Set<string>> {
 
 export async function isHomeRequest(event: H3Event): Promise<boolean> {
   if (import.meta.dev) return true;
-  const clientIp = getRequestIP(event);
+  const clientIp = getRequestIP(event, { xForwardedFor: true });
   if (!clientIp) return false;
   const homeIps = await getHomeIps();
   return homeIps.has(clientIp);

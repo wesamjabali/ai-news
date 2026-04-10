@@ -39,9 +39,15 @@
 }
 
 html {
-  font-size: 17px;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 17px;
+  }
 }
 
 body {
@@ -58,13 +64,23 @@ body {
 #app {
   max-width: 720px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
-  padding-left: calc(env(safe-area-inset-left, 0px) + 1.5rem);
-  padding-right: calc(env(safe-area-inset-right, 0px) + 1.5rem);
+  padding: 1.25rem 1rem 3rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);
+  padding-left: calc(env(safe-area-inset-left, 0px) + 1rem);
+  padding-right: calc(env(safe-area-inset-right, 0px) + 1rem);
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+@media (min-width: 640px) {
+  #app {
+    padding: 2rem 1.5rem 4rem;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
+    padding-left: calc(env(safe-area-inset-left, 0px) + 1.5rem);
+    padding-right: calc(env(safe-area-inset-right, 0px) + 1.5rem);
+  }
 }
 
 a {
