@@ -1,12 +1,13 @@
 import { getRecentSummaryCount } from "../database";
 import { generating } from "../utils/newsEvents";
 
-const MAX_PER_HOUR = 2;
-
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const {
+    public: { maxUpdates },
+  } = useRuntimeConfig(event);
   const recentCount = await getRecentSummaryCount();
 
   return {
-    canGenerate: !generating && recentCount < MAX_PER_HOUR,
+    canGenerate: !generating && recentCount < maxUpdates,
   };
 });

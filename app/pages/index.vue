@@ -105,10 +105,14 @@ const isRequesting = ref(false);
 const bannerState = ref<"hidden" | "generating" | "ready">("hidden");
 const didStream = ref(false);
 
+const {
+  public: { maxUpdates },
+} = useRuntimeConfig();
+
 const canGenerate = computed(() => {
   if (streamContent.value) return false;
   if (data.value?.generating) return false;
-  if ((data.value?.recentCount ?? 0) >= 3) return false;
+  if ((data.value?.recentCount ?? 0) >= maxUpdates) return false;
   return true;
 });
 
@@ -228,19 +232,19 @@ function handleBannerClick() {
   }
 }
 
-watch(data, (val) => {
-  if (val?.generating) {
-    connectStream();
-  }
-});
-
-// Connect immediately if page loads while generation is in progress
-if (data.value?.generating) {
-  connectStream();
-}
-
 onMounted(() => {
   connectStatusStream();
+
+  // Connect immediately if page loads while generation is in progress
+  if (data.value?.generating) {
+    connectStream();
+  }
+
+  watch(data, (val) => {
+    if (val?.generating) {
+      connectStream();
+    }
+  });
 });
 
 onUnmounted(() => {

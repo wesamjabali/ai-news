@@ -2,19 +2,21 @@ import { getRecentSummaryCount } from "../database";
 import { generating } from "../utils/newsEvents";
 import { generate } from "./news.get";
 
-const MAX_PER_HOUR = 2;
-
 export default defineEventHandler(async (event) => {
+  const {
+    public: { maxUpdates },
+  } = useRuntimeConfig(event);
+
   if (generating) {
     setResponseStatus(event, 429);
     return { error: "A briefing is already being generated." };
   }
 
   const recentCount = await getRecentSummaryCount();
-  if (recentCount >= MAX_PER_HOUR) {
+  if (recentCount >= maxUpdates) {
     setResponseStatus(event, 429);
     return {
-      error: "Rate limit reached. Maximum 2 briefings per hour.",
+      error: `Rate limit reached. Maximum ${maxUpdates} briefings per hour.`,
       recentCount,
     };
   }
