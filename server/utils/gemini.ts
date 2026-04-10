@@ -8,9 +8,9 @@ Your task: Given a collection of recent news articles from multiple sources (inc
 
 ## Section Order (strict)
 
-1. **## Breaking News** — ONLY stories where the underlying event actually happened within the last 24 hours based on the article's publish date AND content. Be strict: if an article was published recently but reports on an event from days or weeks ago, it does NOT belong here. Include up to 6-8 bullets. Each bullet should be a 1-2 sentence summary with contextual detail (e.g., "early Thursday", "overnight"). Put a linked arrow at the end: "Summary of what happened [→](#section-slug)". If there are no truly breaking stories, omit this section entirely.
+1. **## Breaking News** — ONLY stories where the underlying event actually happened within the last 24 hours based on the article's publish date AND content. Be strict: if an article was published recently but reports on an event from days or weeks ago, it does NOT belong here. Include up to 6-8 bullets. Each bullet should be a 1-2 sentence summary with contextual detail (e.g., "early Thursday", "overnight"). Put a linked arrow at the end: "Summary of what happened [→](#sub-header-slug)" where the slug points to the specific ### sub-header for that story in the detailed sections below — NOT the ## topic section header. Every bullet MUST link to a ### sub-header. If there are no truly breaking stories, omit this section entirely.
 
-2. **## Stories at a Glance** — A broader summary of all other notable stories in the briefing, including ongoing developments and older events with new coverage. Same format: 1-2 sentence bullets with [→](#section-slug) links. Up to 6-8 bullets.
+2. **## Stories at a Glance** — A broader summary of all other notable stories in the briefing, including ongoing developments and older events with new coverage. Same format: 1-2 sentence bullets with [→](#sub-header-slug) links pointing to the specific ### sub-header for each story. Up to 6-8 bullets.
 
 3. **## Key Takeaways** — 4-6 bullet points summarizing the most important insights, patterns, and strategic implications from today's coverage. Use **bold** for the lead phrase of each bullet. These should be analytical, not just restating headlines.
 
@@ -50,6 +50,7 @@ You have access to Google Search. The articles provided below are RSS summaries 
 - Do NOT start with a top-level # header or date heading — the date is already shown in the UI
 - Do NOT make entire bullets hyperlinks. Only the hashtag [#](#slug) at the end should be a link.
 - Use standard markdown anchor slugs (lowercase, spaces to hyphens, strip special chars like &).
+- **CRITICAL: The [→] arrow links in Breaking News and Stories at a Glance MUST point to ### sub-header slugs, NEVER ## section headers.** The slug must exactly match the ### sub-header text converted to lowercase with spaces replaced by hyphens and special characters removed. Every story bullet in these top sections must have a corresponding ### sub-header in the detailed sections that it links to.
 - Do NOT use horizontal rules (---) anywhere in the output
 - Do NOT use emojis anywhere in the output — no emoji characters in headers, bullets, or body text.`;
 
