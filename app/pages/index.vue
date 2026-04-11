@@ -18,19 +18,6 @@
       <h1 class="site-title">News Briefing</h1>
     </header>
 
-    <Transition name="banner">
-      <div
-        v-if="bannerState !== 'hidden'"
-        class="news-banner"
-        :class="bannerState"
-        @click="handleBannerClick"
-      >
-        <span v-if="bannerState === 'generating'"
-          >New briefing being generated…</span
-        >
-      </div>
-    </Transition>
-
     <LoadingScreen
       v-if="
         !data?.content &&
@@ -136,8 +123,6 @@ if (data.value?.generating && isStale(data.value.createdAt)) {
 }
 
 const isRequesting = ref(false);
-const bannerState = ref<"hidden" | "generating" | "ready">("hidden");
-const didStream = ref(false);
 
 const canGenerate = computed(() => {
   if (streamContent.value) return false;
@@ -189,7 +174,6 @@ const streamContent = ref("");
 function connectStream() {
   if (eventSource) return;
   streamContent.value = "";
-  didStream.value = true;
   eventSource = new EventSource("/api/news-stream");
 
   eventSource.addEventListener("chunk", (e) => {
@@ -235,19 +219,11 @@ function connectStatusStream() {
   statusStream = new EventSource("/api/status-stream");
 
   statusStream.addEventListener("generation-start", () => {
-    didStream.value = false;
-    bannerState.value = "generating";
     connectStream();
   });
 
   statusStream.addEventListener("generation-done", () => {
-    if (didStream.value) {
-      bannerState.value = "hidden";
-      didStream.value = false;
-    } else {
-      bannerState.value = "ready";
-      refresh();
-    }
+    refresh();
     refreshHistory();
   });
 
@@ -267,9 +243,6 @@ function closeStatusStream() {
   }
 }
 
-// Track the createdAt we're currently showing so we can detect new content on resume
-const lastSeenCreatedAt = computed(() => data.value?.createdAt ?? "");
-
 async function handleVisibilityChange() {
   if (document.visibilityState !== "visible") return;
 
@@ -280,7 +253,6 @@ async function handleVisibilityChange() {
   }
 
   // Poll for new content
-  const prev = lastSeenCreatedAt.value;
   await refresh();
   refreshHistory();
 
@@ -290,17 +262,7 @@ async function handleVisibilityChange() {
   }
 
   if (data.value?.generating && !streamContent.value) {
-    bannerState.value = "generating";
     connectStream();
-  } else if (prev && data.value?.createdAt && data.value.createdAt !== prev) {
-    bannerState.value = "ready";
-  }
-}
-
-function handleBannerClick() {
-  if (bannerState.value === "ready") {
-    bannerState.value = "hidden";
-    window.scrollTo({ top: 0, behavior: "instant" });
   }
 }
 
@@ -563,44 +525,6 @@ useHead({
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.news-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  text-align: center;
-  padding: 0.45rem 1rem;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 0.45rem);
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  color: var(--text-muted);
-}
-
-.news-banner.ready {
-  cursor: pointer;
-  color: var(--link);
-}
-
-.news-banner.ready:hover {
-  color: var(--link-hover);
-}
-
-.banner-enter-active,
-.banner-leave-active {
-  transition:
-    transform 0.3s ease,
-    opacity 0.3s ease;
-}
-
-.banner-enter-from,
-.banner-leave-to {
-  opacity: 0;
-  transform: translateY(-100%);
 }
 
 .pull-indicator {
