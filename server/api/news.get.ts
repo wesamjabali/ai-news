@@ -15,6 +15,12 @@ import {
   resetInProgressContent,
   setGenerating,
 } from "../utils/newsEvents";
+import {
+  buildNoUpdatesSection,
+  extractPreviousStories,
+  formatPreviousStoriesForPrompt,
+  stripNoUpdatesSection,
+} from "../utils/noUpdates";
 import { fetchAllNews } from "../utils/sources";
 
 const CACHE_TTL_MS = 30_000;
@@ -56,17 +62,23 @@ export async function generate() {
     // Prepend search-sourced breaking news so they appear first in the prompt
     const allArticles = [...breakingFromSearch, ...articles];
 
-    const previousReport = previousSummary
-      ? {
-          content: previousSummary.content,
-          url: `/report/${previousSummary.id}`,
-        }
-      : undefined;
+    // Extract stories from the previous report for deduplication
+    const previousStories = previousSummary
+      ? extractPreviousStories(
+          previousSummary.content,
+          previousSummary.id,
+        )
+      : [];
+
+    const previousStoriesPrompt =
+      previousStories.length > 0
+        ? formatPreviousStoriesForPrompt(previousStories)
+        : undefined;
 
     let fullContent = "";
     for await (const chunk of streamSummarizeNews(
       allArticles,
-      previousReport,
+      previousStoriesPrompt,
     )) {
       fullContent += chunk;
       appendInProgressContent(chunk);
@@ -74,6 +86,23 @@ export async function generate() {
     }
 
     fullContent = fixBrokenMarkdownUrls(fullContent);
+
+    // Strip any LLM-generated "No Updates Yet" section (the LLM is told
+    // not to generate one, but strip it as a safety net)
+    fullContent = stripNoUpdatesSection(fullContent);
+
+    // Build and append the programmatic "No Updates Yet" section
+    const noUpdatesSection = buildNoUpdatesSection(
+      fullContent,
+      previousStories,
+    );
+    if (noUpdatesSection) {
+      fullContent += noUpdatesSection;
+      // Emit the appended section so streaming clients see it
+      appendInProgressContent(noUpdatesSection);
+      newsEmitter.emit("chunk", noUpdatesSection);
+    }
+
     const newId = await insertSummary(fullContent);
     _cache = null;
     const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
