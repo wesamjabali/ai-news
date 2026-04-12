@@ -2,7 +2,7 @@ import { getSummaryById } from "../../database";
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, "id"));
-  if (!id || isNaN(id)) {
+  if (!Number.isInteger(id) || id <= 0) {
     setResponseStatus(event, 400);
     return { error: "Invalid report ID" };
   }
