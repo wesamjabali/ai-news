@@ -47,6 +47,8 @@ function stripMarkdown(text: string): string {
       .replace(/_{1,3}(.*?)_{1,3}/g, "$1")
       // inline code
       .replace(/`([^`]+)`/g, "$1")
+      // HTML tags (complete and incomplete)
+      .replace(/<[^>]*>?/g, "")
       // blockquotes
       .replace(/^>\s*/gm, "")
       .trim()
@@ -98,7 +100,7 @@ function extractTopicStories(
 
       const plain = stripMarkdown(content).replace(/\n+/g, " ").trim();
       // First sentence, capped at 200 chars
-      const sentenceEnd = plain.search(/\.\s/);
+      const sentenceEnd = plain.search(/\.(?:\s|$)/);
       let summary =
         sentenceEnd >= 0 && sentenceEnd < 200
           ? plain.slice(0, sentenceEnd + 1)
@@ -130,7 +132,7 @@ function extractNoUpdateStories(
 
   // Grab everything between "## No Updates Yet" and the next ## (or end)
   const sectionMatch = markdown.match(
-    /^## No Updates Yet\s*\n([\s\S]*?)(?=^## |\s*$)/m,
+    /^## No Updates Yet\s*\n([\s\S]*?)(?=\n## |\s*$)/m,
   );
   if (!sectionMatch) return stories;
 
@@ -281,9 +283,10 @@ function isStoryCovered(
   // Check against each new ### header
   for (const header of newHeaders) {
     const headerWords = significantWords(header);
+    const headerWordSet = new Set(headerWords);
     const overlap = prevWords.filter(
       (w) =>
-        headerWords.includes(w) ||
+        headerWordSet.has(w) ||
         headerWords.some((hw) => hw.includes(w) || w.includes(hw)),
     ).length;
     // If ≥40% of the previous headline's significant words match a new header
@@ -304,7 +307,7 @@ function isStoryCovered(
 export function stripNoUpdatesSection(markdown: string): string {
   // Remove "## No Updates Yet" and everything until the next ## header or end
   return markdown.replace(
-    /\n*^## No Updates Yet\s*\n[\s\S]*?(?=^## |\s*$)/m,
+    /\n*^## No Updates Yet\s*\n[\s\S]*?(?=\n## |\s*$)/m,
     "",
   );
 }
