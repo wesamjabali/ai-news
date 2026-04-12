@@ -78,6 +78,23 @@ export async function getRecentSummaryCount(minutes = 60): Promise<number> {
   return result[0].values[0][0] as number;
 }
 
+export async function getSummaryById(
+  id: number,
+): Promise<SummaryRow | undefined> {
+  const db = await getDb();
+  const result = db.exec(
+    `SELECT id, content, created_at as createdAt FROM summaries WHERE id = ?`,
+    [id],
+  );
+  if (result.length === 0 || result[0].values.length === 0) return undefined;
+  const [rowId, content, createdAt] = result[0].values[0];
+  return {
+    id: rowId as number,
+    content: content as string,
+    createdAt: createdAt as string,
+  };
+}
+
 export async function getAllSummaries(): Promise<SummaryRow[]> {
   const db = await getDb();
   const result = db.exec(
