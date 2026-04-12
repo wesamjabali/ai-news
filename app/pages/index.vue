@@ -45,8 +45,6 @@
           :datetime="data.createdAt"
           >{{ formatDate(data.createdAt) }}</time
         >
-        <span v-if="streamContent" class="cached-badge">live</span>
-        <span v-else-if="data?.cached" class="cached-badge">cached</span>
         <NuxtLink
           v-if="data?.id && !streamContent"
           :to="`/report/${data.id}`"
@@ -385,16 +383,6 @@ useHead({
 .meta time {
   font-size: 0.85rem;
   color: var(--text-muted);
-}
-
-.cached-badge {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
 }
 
 .permalink {
