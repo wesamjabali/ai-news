@@ -42,9 +42,10 @@ export async function generate() {
   resetInProgressContent();
   newsEmitter.emit("generation-start");
   try {
-    const [articles, breakingFromSearch] = await Promise.all([
+    const [articles, breakingFromSearch, previousSummary] = await Promise.all([
       fetchAllNews(),
       fetchBreakingFromSearch(),
+      getLatestSummary(),
     ]);
 
     if (articles.length === 0 && breakingFromSearch.length === 0) {
@@ -55,18 +56,28 @@ export async function generate() {
     // Prepend search-sourced breaking news so they appear first in the prompt
     const allArticles = [...breakingFromSearch, ...articles];
 
+    const previousReport = previousSummary
+      ? {
+          content: previousSummary.content,
+          url: `/report/${previousSummary.id}`,
+        }
+      : undefined;
+
     let fullContent = "";
-    for await (const chunk of streamSummarizeNews(allArticles)) {
+    for await (const chunk of streamSummarizeNews(
+      allArticles,
+      previousReport,
+    )) {
       fullContent += chunk;
       appendInProgressContent(chunk);
       newsEmitter.emit("chunk", chunk);
     }
 
     fullContent = fixBrokenMarkdownUrls(fullContent);
-    await insertSummary(fullContent);
+    const newId = await insertSummary(fullContent);
     _cache = null;
     const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
-    newsEmitter.emit("done", { createdAt });
+    newsEmitter.emit("done", { id: newId, createdAt });
   } catch (e: any) {
     newsEmitter.emit("error", e?.message || "Generation failed");
   } finally {
@@ -90,6 +101,7 @@ export default defineEventHandler(async () => {
 
   if (latest && isFresh(latest.createdAt)) {
     const response = {
+      id: latest.id,
       content: latest.content,
       createdAt: latest.createdAt,
       cached: true,
@@ -112,6 +124,7 @@ export default defineEventHandler(async () => {
 
   if (latest) {
     return {
+      id: latest.id,
       content: latest.content,
       createdAt: latest.createdAt,
       cached: true,

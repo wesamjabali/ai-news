@@ -18,6 +18,8 @@ Your task: Given a collection of recent news articles from multiple sources (inc
 
 5. **## Other Developments** — Important stories NOT directly related to Palestine but relevant to the broader geopolitical picture (e.g., Sudan, Ukraine, global diplomacy, sanctions, energy markets, protests). Expand this section — give each story a ### sub-header with a paragraph of context rather than just a brief mention.
 
+6. **## No Updates Yet** — ONLY include this section when a previous briefing is provided below. Review every story and sub-topic from the previous briefing. For each story that has NO new developments or updates in today's articles, list it here as a bullet: "- **Story headline** — Brief 1-sentence recap of what was last reported. [See previous report →](previous-report-link)". The link should use the exact previous report URL provided below. If ALL previous stories have updates, omit this section. Do NOT re-cover these stories in the sections above — they belong here precisely because nothing new has happened.
+
 ## Formatting & Style Rules
 
 - Use **bold** for key names, places, figures, and numbers when first mentioned
@@ -63,6 +65,10 @@ export async function* streamSummarizeNews(
     pubDate: string;
     imageUrl?: string;
   }[],
+  previousReport?: {
+    content: string;
+    url: string;
+  },
 ): AsyncGenerator<string> {
   const config = useRuntimeConfig();
   const apiKey = config.geminiApiKey;
@@ -80,9 +86,15 @@ export async function* streamSummarizeNews(
     )
     .join("\n\n---\n\n");
 
+  let prompt = `${SYSTEM_PROMPT}\n\nHere are the latest articles:\n\n${articleText}`;
+
+  if (previousReport) {
+    prompt += `\n\n---\n\n## Previous Briefing\n\nThe following briefing was published previously. Its permalink is: ${previousReport.url}\n\nReview every story below. If a story has new updates in today's articles, cover it in the appropriate section above. If a story has NO new developments, list it in the "## No Updates Yet" section with a link to this previous report URL.\n\n${previousReport.content}`;
+  }
+
   const response = await ai.models.generateContentStream({
     model: "gemini-3-flash-preview",
-    contents: `${SYSTEM_PROMPT}\n\nHere are the latest articles:\n\n${articleText}`,
+    contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],
       maxOutputTokens: 26624,

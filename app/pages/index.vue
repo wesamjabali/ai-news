@@ -45,6 +45,12 @@
           :datetime="data.createdAt"
           >{{ formatDate(data.createdAt) }}</time
         >
+        <NuxtLink
+          v-if="data?.id && !streamContent"
+          :to="`/report/${data.id}`"
+          class="permalink"
+          >permalink</NuxtLink
+        >
       </div>
       <MarkdownContent :content="streamContent || data!.content!" />
     </div>
@@ -66,9 +72,17 @@
           class="history-entry"
         >
           <button class="history-toggle" @click="toggle(summary.id)">
-            <time :datetime="summary.createdAt">{{
-              formatDate(summary.createdAt)
-            }}</time>
+            <span class="history-toggle-left">
+              <time :datetime="summary.createdAt">{{
+                formatDate(summary.createdAt)
+              }}</time>
+              <NuxtLink
+                :to="`/report/${summary.id}`"
+                class="history-permalink"
+                @click.stop
+                >link</NuxtLink
+              >
+            </span>
             <span class="toggle-icon">{{
               expanded.has(summary.id) ? "−" : "+"
             }}</span>
@@ -93,6 +107,7 @@
 
 <script setup lang="ts">
 const { data, status, error, refresh } = await useFetch<{
+  id?: number;
   content?: string;
   createdAt?: string;
   cached?: boolean;
@@ -185,8 +200,9 @@ function connectStream() {
   });
 
   eventSource.addEventListener("done", (e) => {
-    const { createdAt } = JSON.parse(e.data);
+    const { id, createdAt } = JSON.parse(e.data);
     data.value = {
+      id,
       content: streamContent.value,
       createdAt,
       cached: false,
@@ -369,6 +385,18 @@ useHead({
   color: var(--text-muted);
 }
 
+.permalink {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.permalink:hover {
+  color: var(--link);
+}
+
+
 .error-state {
   text-align: center;
   padding: 4rem 1rem;
@@ -487,8 +515,25 @@ useHead({
   color: var(--link);
 }
 
+.history-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .history-toggle time {
   font-size: 0.9rem;
+}
+
+.history-permalink {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.history-permalink:hover {
+  color: var(--link);
 }
 
 .toggle-icon {
