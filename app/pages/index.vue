@@ -396,7 +396,6 @@ useHead({
   color: var(--link);
 }
 
-
 .error-state {
   text-align: center;
   padding: 4rem 1rem;
