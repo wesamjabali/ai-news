@@ -165,9 +165,15 @@ watch(
 function handleAnchorClick(e: MouseEvent) {
   const link = (e.target as HTMLElement).closest("a.anchor-link");
   if (!link) return;
-  e.preventDefault();
   const href = link.getAttribute("href");
-  if (!href?.startsWith("#")) return;
+  if (!href?.startsWith("#")) {
+    if (href) {
+      e.preventDefault();
+      navigateTo(href);
+    }
+    return;
+  }
+  e.preventDefault();
   const rawSlug = href.slice(1);
   let decoded = rawSlug;
   try {
